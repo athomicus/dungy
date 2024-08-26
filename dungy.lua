@@ -1,0 +1,1264 @@
+--1a1c2c763b36bd6c4ac0cbdceaa56ccf82548b9bb425717943e1b33b5dc941a6f673eff7f4f4f49b4ca3fee761bf4040
+-- 0 cant go
+-- 7 - enemy
+-- 5 - weapon for player
+-- 3 player can take
+-- 2 chest/key
+--key: 19,15} {17,49}  {10,60}  {77,62} {110,69} {98,10} {74,40}
+W,H = 240,136
+bdd =50
+minx,miny = bdd,bdd
+maxx,maxy = W-bdd,H-bdd
+
+Vdistance_normal={x=0,y=0}
+Vdistance_weapon_normal={x=0,y=0}
+init = true
+score = 0
+live =6
+keys=0
+gameState="WIN"
+
+dir=0
+t=0
+Player={x=80,y=110,dist=2,goto_x=40,goto_y=40} -- dist in px Player move
+cam={x=Player.x-128,y=Player.y-64} --camera 
+Enemies={} --table will be create on set enemies()
+Keys={}
+Weapon ={sprite_id=392,x,y,goto_x,goto_y,active=false}
+Enemy_speed=0.2
+t1=0
+t2=0
+
+
+-- ######### MAIN LOOP ###############
+function TIC()
+	t2=t2+1
+	if(t2>60) then t2=0 end
+	t=t+5 
+   
+if gameState=="PLAY" then
+  ------------ iniTIALIZE		
+  INIT()
+  cls(1)
+   MOUSE_INPUT()
+   MAPDRAW()
+   DRAW_WEAPON()
+   CHECK_WEAPON_COLLISION()
+   CHECK_PLAYER_COLLISION() 
+   CHECK_PLAYER_ENEMY_COLLISION()
+   spr(288,Player.x-cam.x-8,Player.y-cam.y-8,0,1,1,0,2,2)
+   DRAW_ENEMIES()
+   HUD()
+   ENEMY_CHASE_PLAYER()
+   GET_THE_KEYS()
+   KEYS_BLINKING()
+   CHECK_LIVES()
+   
+end
+
+if gameState=="LOOSE" then
+	cls(1)
+    map(60, 119, 31, 18, 0, 0) 
+	print("YOU LOOSE ",90,60,0)
+	print("Yor Score:",80,80,0)	
+    print(score,140,80,0)
+    
+	print("TRY AGAIN - PRESS SPACE",50,120,18)	
+	if keyp(48) then
+		init = true
+		t2=0
+		gameState="TITLE"
+		--key(null) 
+	  end
+
+end ----------- end loose
+
+if gameState=="TITLE" then
+	cls(1)
+	
+    map(0, 102, 31, 18, 0, 0) 
+	
+	
+	print("DUNGY",108,10,0)
+	print("DUNGY",107,9,1)
+	print("DUNGY",106,8,12)
+	print("Solo Dev Game Jam:",70,20,1)
+	print("TWO BUTTON CONTROLS",65,26,1)
+	
+
+	print("L Mouse button: GO",65,50,8)
+	print("R Mouse button: FIRE",60,60,8)
+	print("PRESS SPACE",90,125,12)	
+	print("TO WIN FIND ",90,70,18)
+	print("SEVEN DIAMENTS:",80,80,18)
+
+
+ if keyp(48) and  t2>20 and t2<60 then
+  init = true
+  gameState="PLAY" 
+end
+
+end ---- end Title
+
+if gameState=="WIN" then
+	
+	cls(1)
+	map(60, 102, 31, 18, 0, 0) 	
+    map(60, 102, 31, 18, 0, 0) 
+    txt = "YOU WIN"
+   for z=15,0,-1 do
+	y=12*z*math.sin(z/5+t1/50)
+	w=print(txt,0,-100,z,false,z)
+	print(txt,(240-w)/2,
+		 68+y/1.5,
+		 15-z,false,z)
+    end
+    t1=t1+1
+     print("Yor Score:",80,80,0)
+     print(score,140,80,0)
+     print("PRESS SPACE",80,120,18)	
+
+      if keyp(48) then
+         init = true
+        gameState="TITLE" 
+      end
+	end-- WIN
+   
+end -- ###### END OF MAIN LOOP ############
+
+
+
+function CHECK_LIVES()
+	if live<0 then
+		gameState="LOOSE"
+	   end
+end-------CHECK_LIVES
+
+function INIT()
+	if init then
+		for k in pairs (Enemies) do
+			Enemies [k] = nil
+		end
+		
+		SET_ENEMIES(360)
+		INIT_KEYS()
+		keys=0
+		score=0	
+		live =6  
+		--Player={x=10,y=20,dist=2,goto_x=10,goto_y=20}
+		Player.x=80
+		Player.y=110
+		Player.dist =2
+		Player.goto_x=80
+		Player.goto_y=110
+		cam.x=Player.x-128
+		cam.y=Player.y-64
+		init = false
+	end
+end ---### INIT
+
+
+function INIT_KEYS()
+	
+	--{19,15} {17,49}  {10,60}  {77,62} {110,69} {98,10} {74,40}
+   mset(19,15,0)
+   mset(17,49 ,0)
+   mset(10,60,0)
+   mset(77,62,0)
+   mset(110,69,0)
+   mset(98,10 ,0)
+   mset(74,40,0)
+end------------------- INIT KEYS
+
+
+function KEYS_BLINKING()
+--	mset(x1,y1,0)
+	local K1={19,15}
+	local K2={17,49}
+	local K3={10,60}
+	local K4={77,62}
+	local K5={110,69}
+	local K6={98,10}
+	local K7={74,40}
+	
+	
+	
+	if t>60 and mget(74,40)~=79  then 
+		mset(74,40,16)
+	  end
+	  if t<60 and mget(74,40)~=79   then 
+		  mset(74,40,0)
+	  end
+	
+	
+	if t>60 and mget(19,15)~=79  then 
+	  mset(19,15,16)
+	end
+	if t<60 and mget(19,15)~=79   then 
+		mset(19,15,0)
+	end
+
+	if t>60 and mget(17,49)~=79  then 
+		mset(17,49,16)
+	  end
+	  if t<60 and mget(17,49)~=79   then 
+		  mset(17,49,0)
+	  end
+	
+
+	  if t>60 and mget(10,60)~=79  then 
+		mset(10,60,16)
+	  end
+	  if t<60 and mget(10,60)~=79   then 
+		  mset(10,60,0)
+	  end
+	
+    
+	  if t>60 and mget(77,62)~=79  then 
+		mset(77,62,16)
+	  end
+	  if t<60 and mget(77,62)~=79   then 
+		  mset(77,62,0)
+	  end
+	 
+	  if t>60 and mget(110,69)~=79  then 
+		mset(110,69,16)
+	  end
+	  if t<60 and mget(110,69)~=79   then 
+		  mset(110,69,0)
+	  end
+
+	  if t>60 and mget(98,10)~=79  then 
+		mset(98,10,16)
+	  end
+	  if t<60 and mget(98,10)~=79   then 
+		  mset(98,10,0)
+	  end
+	if(t>120) then t=0 end
+
+end
+function HUD()
+	--rect(cam.x//8+0,cam.y//8+0,240,8,1)
+	for i=1,6 do
+    	print("##############################",5,5+i,0)
+		print("##############################",6,5+i,0)
+		print("##############################",7,5+i,0)
+	end
+	 
+	--print(score,11,8,6)
+	print(score,11,8,12)
+    
+	for i=1,6 do
+		spr(302,32+12*i,5,0,1,1,0,2,2)
+	end
+	for i=1,live do
+		spr(270,30+12*i,5,0,1,1,0,2,2)
+	end
+
+	for i=1,keys do
+		spr(16,120+8*i,7,1,1,1,0,1,1)
+	end
+end ---### HUD
+
+
+function MOUSE_INPUT()
+	mx,my,ml,mmid,mr= mouse()
+	local Vdistance={x=0,y=0}
+	local l = 0
+	if ml then   
+	   Vdistance.x = mx+cam.x-Player.x	--need add cam cuz mouse onle iis read from te xcreen 256x128
+	   Vdistance.y = my+cam.y-Player.y
+	   Player.goto_x =math.floor( mx) +cam.x
+	   Player.goto_y =math.floor( my) + cam.y
+	   l = math.sqrt(Vdistance.x*Vdistance.x+Vdistance.y*Vdistance.y)
+	   Vdistance_normal.x = (Vdistance.x)/l
+	   Vdistance_normal.y = (Vdistance.y)/l
+	end
+	if mr then 
+	   Vdistance.x = mx+cam.x-Player.x	--need add cam cuz mouse onle iis read from te xcreen 256x128
+	   Vdistance.y = my+cam.y-Player.y
+	   Weapon.x = Player.x
+	   Weapon.y = Player.y
+	   Weapon.goto_x =math.floor( mx) +cam.x
+	   Weapon.goto_y =math.floor( my) +cam.y
+	   l = math.sqrt(Vdistance.x*Vdistance.x+Vdistance.y*Vdistance.y)
+	   Vdistance_weapon_normal.x = (Vdistance.x)/l
+	   Vdistance_weapon_normal.y = (Vdistance.y)/l
+	   Weapon.active = true
+	end
+
+end -- MOUSE INPUNT
+
+function CHECK_FREE_SPACE_AT(x,y)
+ is_there_buliding=fget(mget(x//8,y//8),0)
+	return is_there_buliding
+end  -- CHECK
+
+function GET_THE_KEYS()
+	 
+	local x1 = Player.x//8
+    local y1 = Player.y//8
+ 
+     
+    --print(keys,100,50,6)	
+
+    if mget(x1,y1)==0 or mget(x1,y1)==16 then 
+	   mset(x1,y1,79)
+	   keys = keys +1
+	   sfx(0)
+
+	end
+    if keys>=7 then gameState="WIN" end
+end-----#GET KEYS
+
+function DRAW_ENEMIES()
+ for i=1,#Enemies do
+   if Enemies[i].active then  
+	spr(Enemies[i].sprite_id,Enemies[i].x-cam.x,Enemies[i].y-cam.y,0,1,1,0,2,2)
+    end
+end
+end -- end_draw
+
+
+function SET_ENEMIES(count)
+	--spider={sprite_id=356,x=0,y=0,active=false}
+	--ghost={sprite_id=320,x=0,y=0,active=false}
+	--crab={sprite_id=324,x=0,y=0,active=false}
+	---cyclop={sprite_id=332,x=0,y=0,active=false}
+	--evil_mag={sprite_id=326,x=0,y=0,active=false}
+	--big_ghost={sprite_id=354,x=0,y=0,active=false}
+for c=1, count do 
+	loc = RANDOM_ENEMY_LOCATION() 
+	loc_x = loc[1]
+	loc_y = loc[2]
+	
+	--while CHECK_FREE_SPACE_AT(loc_x,loc_y)==false do
+	-- loc = RANDOM_ENEMY_LOCATION() 
+    -- loc_x = loc[1]
+	 --loc_y = loc[2]
+	--end
+
+    loc_sprites_number={356,320,324,332,262,354,320,352,322}
+	nr = math.random(1,9)
+
+	local enemy = {
+		sprite_id=loc_sprites_number[nr],
+		x=loc_x,
+		y=loc_y,
+		active=true
+		}
+	
+		Enemies[c] = enemy
+end
+
+end -- SET ENEMIES
+function RANDOM_ENEMY_LOCATION()
+	local N1,N2 =128*9,64*8  --Player={x=10,y=20,dist=2,goto_x=10,goto_y=20} -- dist in px Player move
+
+	 newX = math.random( 90,10+N1)
+	 newY = math.random(20-N2,20+N2)
+	return {newX,newY}
+
+end
+
+function DRAW_WEAPON()
+	if Weapon.active then
+		sfx(5)
+		--spr(256,Player.x-cam.x,Player.y-cam.y,0,1,1,0,2,2)
+	spr(Weapon.sprite_id,Weapon.x-cam.x,Weapon.y-cam.y,0,1,1,0,2,2)
+	dist_x = Weapon.x - Weapon.goto_x
+	dist_y = Weapon.y - Weapon.goto_y
+   dist_sqr = dist_x * dist_x + dist_y * dist_y
+   min_distance = 3
+   --if dist_sqr > min_distance * min_distance then
+   local speed = 4
+	Weapon.x=Weapon.x+Vdistance_weapon_normal.x*speed
+	Weapon.y=Weapon.y+Vdistance_weapon_normal.y*speed
+  end
+end  -- ####### END OF DSRAW \WEAPON
+
+function MAPDRAW()--draw map according to camera coordinates
+  
+    map(
+        cam.x//8,
+        cam.y//8,
+        31,
+        18,
+        -(cam.x%8),
+        -(cam.y%8)
+    )
+end --## END OF MAP DRAW ############
+
+function CHECK_COLLISION_BETWEEN_OBJ(object1,object2)
+ local width = 16-1 --16px
+ local object1Left = object1.x
+ local object1Right = object1.x+width
+ local object1Top = object1.y
+ local object1Bottom = object1.y + width
+ 
+ local object2Left = object2.x
+ local object2Right = object2.x+width
+ local object2Top = object2.y
+ local object2Bottom = object2.y + width 
+
+ if (object1Left<object2Right) and 
+    (object1Right>object2Left) and
+	(object1Top<object2Bottom) and
+	(object1Bottom>object2Top) then
+     return true
+  else
+   return false
+  end
+end  -----  ####### CHECK_COLLISION_BETWEEN_OBJ(
+
+function ENEMY_CHASE_PLAYER()
+	for i=1,#Enemies do
+	   
+     
+		
+	 if Enemies[i].active then
+		dx = Player.x - Enemies[i].x
+		dy = Player.y - Enemies[i].y
+   	    l = math.sqrt(dx*dx + dy*dy) 
+	    Vdx=dx/l
+	    Vdy=dy/l
+	    dist_sqr = dx * dx + dy * dy
+	    min_distance = 3
+	    if dist_sqr > min_distance * min_distance and l<150 then
+		  Enemies[i].x=Enemies[i].x+Vdx*(Enemy_speed + math.random(0,4)*0.2)
+		  Enemies[i].y=Enemies[i].y+Vdy*(Enemy_speed +math.random(0,4)*0.2)
+	    end
+	  end
+	end
+end -- enemy chase Player
+
+
+
+function CHECK_WEAPON_COLLISION()
+	if Weapon.active then
+	 for i=1,#Enemies do
+		if Enemies[i].active then
+		
+		  if	CHECK_COLLISION_BETWEEN_OBJ(Weapon,Enemies[i]) then
+		    --###########   KILL ENEMY #####
+			Enemies[i].active = false
+			Weapon.active =false
+			score = score+10
+			sfx(3)
+			break
+		   end
+		  
+		    
+		end
+
+	 end	
+    end
+end --##### end of CHECK_WEAPON_COLLISION()  
+
+function CHECK_PLAYER_ENEMY_COLLISION()
+	 
+	 for i=1,#Enemies do
+		 
+		  
+		if CHECK_COLLISION_BETWEEN_OBJ(Player,Enemies[i]) and Enemies[i].active then
+		    Enemies[i].active = false
+			--Player lost live
+			--print("COLL",100,100,6)
+		  -- LIFE
+			 live=live-1
+             sfx(7)				 
+			if live<0 then
+			 gameState="LOOSE"
+			end
+			 break
+	  		
+		end
+
+		 
+	 end	
+    
+end --##### end of CHECK_WEAPON_COLLISION()  
+
+function CHECK_PLAYER_COLLISION()
+	local px = Player.x
+	local py = Player.y
+	local cx = cam.x
+	local cy = cam.y
+
+	MOVE_PLAYER_NO_LIMIT()
+	--MOVE_PLAYER_BY_MOUSE()
+	-- if colide we back player 
+	-- and camera to previous pos
+	if COLLIDE() then
+	 --print("collision",10,100)
+		Player.x = math.floor(px-Vdistance_normal.x*2)
+		Player.y = math.floor(py-Vdistance_normal.y*2)
+		cam.x=cx
+		cam.y=cy
+		Player.goto_x = Player.x
+		Player.goto_y =  Player.y
+ 	end
+
+end --#### END CHECK_PLAYER_COLLISION #############
+
+
+
+
+
+
+function COLLIDE()
+ local x1 = Player.x/8
+ local y1 = Player.y/8
+ local x2 = (Player.x+7)/8
+ local y2 = (Player.y+7)/8
+
+ --pix(x1, y1, 6)
+ --pix(x1, y2, 6)
+ --pix(x2, y2, 6)
+ --pix(x2, y1, 6)
+ 
+ 
+ --fget(sprite_id, flag) -> bool
+ --mget(x, y) -> tile_id - index of sprite
+ local A=fget(mget(x1,y1),0)
+ local B=fget(mget(x1,y2),0)
+ local C=fget(mget(x2,y2),0)
+ local D=fget(mget(x2,y1),0)
+
+ 
+ if A or B or C or D  then
+ 	return true
+ else
+  return false
+ end
+  
+
+end -- ####### END OF COLLIDE ###########3
+
+function MOVE_PLAYER_NO_LIMIT()
+ dist_x = Player.x - Player.goto_x
+  dist_y = Player.y - Player.goto_y
+ dist_sqr = dist_x * dist_x + dist_y * dist_y
+ min_distance = 3
+if dist_sqr > min_distance * min_distance then
+	Player.x=Player.x+Vdistance_normal.x*Player.dist
+  	Player.y=Player.y+Vdistance_normal.y*Player.dist
+end
+ --print(mget(Player.goto_x,Player.goto_y), 100,10)
+ 
+ --dist_x =   cam.x - (Player.x-128)
+ --dist_y =  cam.y -(Player.y-64) 
+ --dist_sqr = dist_x * dist_x + dist_y * dist_y
+ --min_distance = 5
+ 
+ --print(cam.x,100,10,6)
+ --print (Player.x-128,100,20,6)
+
+ cam.y = (Player.y-64)
+ cam.x  = Player.x-128
+  
+--dist_sqr = dist_x * dist_x + dist_y * dist_y
+--min_distance = 5
+--if dist_sqr > min_distance * min_distance then
+--	cam.x=cam.x+0.1
+--  	cam.y=cam.y+Vdistance_normal.y
+--end
+end --END_MOVE_NO LIMIT
+
+function MOVE_PLAYER_BY_MOUSE()
+	-- PLAYER with SCROLL camera
+	 
+		if Player.y>0 then
+		 Player.y=Player.y-Player.dist
+	 end
+	 if Player.y - cam.y < miny and cam.y > 0 then
+	cam.y = cam.y - Player.dist
+	end
+	 
+	
+	 
+	 if Player.y < H * 2 - 8 then
+	  Player.y=Player.y+Player.dist 
+		end
+		if Player.y - cam.y > maxy - 8 and cam.y < H then
+	cam.y = cam.y + Player.dist
+	end
+	 
+	 if Player.x > 0 then
+			Player.x=Player.x-Player.dist dir=1
+	 end
+		if Player.x-cam.x<minx and cam.x> 0 then
+		 cam.x = cam.x-Player.dist
+		end
+ 
+			
+	 
+	 if Player.x < W * 2 - 8 then
+		 Player.x = Player.x + Player.dist
+			dir =0 
+	 end
+	if Player.x - cam.x > maxx-8 and cam.x < W then
+	cam.x = cam.x + Player.dist
+	end
+	 
+	
+	end -- ######## END MOVE_PLAYER_BY_MOUSE()
+
+
+	function MOVE_PLAYER()
+		-- PLAYER with SCROLL camera
+		if btn(0) then
+			if Player.y>0 then
+			 Player.y=Player.y-Player.dist
+		 end
+		 if Player.y - cam.y < miny and cam.y > 0 then
+		cam.y = cam.y - Player.dist
+		end
+		end
+		
+		if btn(1) then
+		 if Player.y < H * 2 - 8 then
+		  Player.y=Player.y+Player.dist 
+			end
+			if Player.y - cam.y > maxy - 8 and cam.y < H then
+		cam.y = cam.y + Player.dist
+		end
+		end	
+		
+		
+		if btn(2) then 
+		 if Player.x > 0 then
+				Player.x=Player.x-Player.dist dir=1
+		 end
+			if Player.x-cam.x<minx and cam.x> 0 then
+			 cam.x = cam.x-Player.dist
+			end
+		end	
+				
+		if btn(3) then
+		 if Player.x < W * 2 - 8 then
+			 Player.x = Player.x + Player.dist
+				dir =0 
+		 end
+		if Player.x - cam.x > maxx-8 and cam.x < W then
+		cam.x = cam.x + Player.dist
+		end
+		end
+		
+	end -- ######## END MOVE_PLAYER()
+function DRAW(PLR)
+ one_sec = 256+t%60//30*8
+ spr(256,PLR.x,PLR.y,0,1,dir,0,2,2)
+end -- ######## END OF DRAW ########3
+ 
+--mapdrw()-- draw a 31x18 section of the map to camera position 
+-- <TILES>
+-- 000:334444333400ff43440fef4444fece4444ffee44343334433344443333344333
+-- 001:3333330233333302333333023333330233333302333333023333330233333302
+-- 002:2222222222222222222222222222222222222222222222222222222222222222
+-- 003:2222222222222222222222222222222222222222222222222222222222222222
+-- 004:2222222222222222222222222222222222222222222222222222222222222222
+-- 005:2222222222222222222222222222222222222222222222222222222222222222
+-- 006:2222222222222222222222222222222222222222222222222222222222222222
+-- 007:2222222222222222222222222222222222222222222222222222222222222222
+-- 008:3300000030000000000aaaaa00daaaaa00daaaaa00fddddd00fddddd00fddddd
+-- 009:0003333300000000aa000000aadaaaaaaadaaaaaddfaaaaaddfdddddddfddddd
+-- 010:3300000000000000000aaaaaaadaaaaaaadaaaaaaafdddddddfdddddddfddddd
+-- 011:0003333300000003aa000000aadaaa00aadaaa00ddfaaa00ddfddd00ddfddd00
+-- 012:3300ddda330df000330d0000330d0021330a001233ff001233ff0012330d0012
+-- 013:ffadddaf00000000000000001111111122222221222222212222222122222221
+-- 014:fffaddda00000000000000000011111100122222001222220012222200122222
+-- 015:ffaddd0000000fd0000000d0111200d0222100a0222100ff222100ff222100d0
+-- 016:3344443334666643446f56444465c64444666644343334433344443333344333
+-- 017:3333330233333302333333023333330233333302333333023333330233333302
+-- 018:2222222222222222222222222222222222222222222222222222222222222222
+-- 019:2222222222200000220000002200daaa2200aaaa2200aaaa2200aadd2200aadd
+-- 020:2200000000000000000aaaaaaadaaaaaaadaaaaaaafdddddddfdddddddfddddd
+-- 021:0002222200000000aa000000aadaaaaaaadaaaaaddfaaaaaddfdddddddfddddd
+-- 022:222222220000022200000022aaad0022aaaa0022aaaa0022ddaa0022ddaa0022
+-- 023:2222222222222222222222222222222222222222222222222222222222222222
+-- 024:00ffffff00aa002d00aa002d00aa002200aa002200aa002200aa002200aa0022
+-- 025:ffffffffdddd2222dddd21122222222222211122222222222222222222222222
+-- 026:ffffffff222222dd211112dd2111122222222222222222222222222222222222
+-- 027:ffffff00d200aa00d200aa002200aa002200aa002200aa002200aa002200aa00
+-- 028:330d0012330a001233ff001233ff0012330d0012330d0011330aafff330aafdf
+-- 029:2222dd212222dd2122220021222222212222222111111111fffffaa0daaafaa0
+-- 030:0012dd220012dd22001200220012222200122222001111110fffffff0ddddddf
+-- 031:222100d0222100a0222100ff222100ff222100d0111100d0fffdfaa0daadfaa0
+-- 032:0000000022222222222222202222222022222220222200202202002022222220
+-- 033:0000000200000022000000020211200201111002011110020211200200000002
+-- 034:2222222222222222222222222222222222222222222222222222222222222222
+-- 035:2200aa002200aa002200aa002200aa002200aa002200aa002200aa002200aa00
+-- 036:ffffffffdddddfffdddddfffdddddfddffffffffadfdddddddfdddddddfddddd
+-- 037:ffffffffffffffddffffffdddddddfddffffffffddfdaaaaddfdddddddfddddd
+-- 038:00aa002200aa002200aa002200aa002200aa002200aa002200aa002200aa0022
+-- 039:2222222222222222222222222222222222222222222222222222222222222222
+-- 040:00aa002200aa002200aa002200aa002200aa002200aa002200aa002200aa0022
+-- 041:2222222222222222222222222222222222222222222222222222222222222222
+-- 042:2222222222222222222222222222222222222222222222222222222222222222
+-- 043:2200aa002200aa002200aa002200aa002200aa002200aa002200aa002200aa00
+-- 044:330aafdf330dffdf330dffff330aafaa330aafdd330aafdd330aafff330aafdf
+-- 045:ddddfaa0ddddffd0ffffffd0adfdfaa0ddfdfaa0ddfdfaa0fffffaa0daaafaa0
+-- 046:0ddddddf0ddddddf0fffffff0aadfddd0dddfddd0dddfddd0fffffff0ddddddf
+-- 047:ddddfaa0ddddffd0fffdffd0ddddfaa0ddddfaa0ddddfaa0fffdfaa0daadfaa0
+-- 048:2200000220000000200111002001110020011100200000002200000222222222
+-- 049:0000002222222222200202222002222222222222222222222222222222222222
+-- 050:2222222222222222222222222222222222222222222222222222222222222222
+-- 051:2200aa002200aa002200aa002200aa002200aa002200aa002200aa002200aa00
+-- 052:ffffffffffffffdaffffffdddddddfddffffffffadfdddddddfdddddddfddddd
+-- 053:ffffffffaaaadfffdddddfffdddddfddffffffffddfdaaaaddfdddddddfddddd
+-- 054:00aa002200aa002200aa002200aa002200aa002200aa002200aa002200aa0022
+-- 055:2222222222222222222222222222222222222222222222222222222222222222
+-- 056:00aa000000dd000000daaaaa00daaaaa00daaaaa00fddddd00fddddd00fddddd
+-- 057:0002222200000000aa000000aadaaaaaaadaaaaaddfaaaaaddfdddddddfddddd
+-- 058:2200000000000000000aaaaaaadaaaaaaadaaaaaaafdddddddfdddddddfddddd
+-- 059:0000aa000000aa00aa00dd00aadaaa00aadaaa00ddfaaa00ddfddd00ddfddd00
+-- 060:330aafdf330dffdf330dffff330aafaa330aafdd330aafdd33000ddd3300df00
+-- 061:ddddfaa0ddddffd0ffffffd0adfdfaa0ddfdfaa0ddfdfaa0dffdddd0000000fd
+-- 062:0ddddddf0ddddddf0fffffff0aadfddd0dddfddd0dddfddd0003333300033333
+-- 063:ddddfaa0ddddffd0fffdffd0ddddfaa0ddddfaa0ddddfaa03333333333333333
+-- 064:222222222222222222120022222200222a22222222222222222aa222222aa222
+-- 065:222222222222dad22222aaa22222dad22aa200022aa2aa222002aa2222222222
+-- 066:2222222222222222222222222222222222222222222222222222222222222222
+-- 067:2200aa002200aa002200aa002200aaaa2200aaaa2200daaa2200dddd2220fddd
+-- 068:3300000000000000000aaaaaaadaaaaaaadaaaaaaafdddddddfdddddddfddddd
+-- 069:0003333300000000aa000000aadaaaaaaadaaaaaddfaaaaaddfdddddddfddddd
+-- 070:00aa002200aa002200aa0022aaaa0022aaaa0022aaad0022dddd0022dddf0222
+-- 071:2222222222222222222222222222222222222222222222222222222222222222
+-- 072:ffffffffddddddfdddddddfdddddddfdffffffffaadfdddddddfdddddddfdddd
+-- 073:ffffffffaaaadfdddddddfdddddddfddffffffffddfdaaaaddfdddddddfddddd
+-- 074:ff005005dd006366dd006366dd005366ff005455aa005455dd006455dd006366
+-- 075:500500ff663600dd663600dd663500dd554500ff554500aa554600dd663600dd
+-- 076:3300d0003300d0023300a001330ff001330ff0013300d0013300d0013300a001
+-- 077:0000000d1111200d2222100a2222100f2222100f2222100d2dd2100d2dd2100a
+-- 078:000333330003333300033333f0033333f0033333000333330003333300033333
+-- 079:3333333333333333333333333333333333333333333333333333333333333333
+-- 080:2222222222daaad222aaaaa222aaaaa222aaaaa222daaad22200000222222222
+-- 081:2222222222222212aa222222aa22222222200222222002222222222222222222
+-- 082:2222222222222222222222222222222222222222222222222222222222222222
+-- 083:22222fff22222222222222222222222222222222222222222222222222222222
+-- 084:ffffffff2222222d2211112d2211112222222222222222222222222222222222
+-- 085:ffffffffdddd2222dddd21122222222222211122222222222222222222222222
+-- 086:fff2222222222222222222222222222222222222222222222222222222222222
+-- 087:2222222222222222222222222222222222222222222222222222222222222222
+-- 088:fff00f00ddd00a00ddd00a00ddd00a00fffaaaaaaadfdddddddfdddddddfdddd
+-- 089:00d00fff00a00ddd00a00ddd00a00dddaaaaafffddfdddaaddfdddddddfddddd
+-- 090:ff000636ddf00063dddf0006ddddf000ffffff00aadfdddddddfdddddddfdddd
+-- 091:636000ff36000fdd6000ffdd000fdfdd00ffffffddfdaaaaddfdddddddfddddd
+-- 092:330ff001330ff0013300d0013300d0013300aafd3300aafd3300aafd3300dffd
+-- 093:2002100f2222100f2222100d1111100dfffffffffdaaaadffddddddffddddddf
+-- 094:f0033333f00333330003333300033333ff033333dd033333dd033333dd033333
+-- 095:3333333333333333333333333333333333333333333333333333333333333333
+-- 096:00addddd00adddda00daaaad00ffffff00addddd00addddd00daaaaa00ffffff
+-- 097:ddddddddddddddddaaaaaaaaffffffffddddddddddddddddaaaaaaaaffffffff
+-- 098:ddddddddddddadddaaaadaaaffffffffddddddddddddddddaaaaaaaaffffffff
+-- 099:ddddddddddddddddaaaaaaaaffffffffddddddddddddddddaaaaaaaaffffffff
+-- 100:ddddddddddddadddaaaadaaaffffffffddddddddddddddddaaaaaaaaffffffff
+-- 101:ddddda00ddddda00aaaaad00ffffff00ddddda00ddddda00aaaaad00ffffff00
+-- 102:00addddd00addddd00daaaaa00ffffff00addddd00addadd00daadaa00ffffff
+-- 103:ddddda00ddddda00aaaaad00ffffff00ddddda00ddddda00aaaaad00ffffff00
+-- 104:ffffffffddddddfdddddddfdddddddfdffffffffaadfdddddddfdddddddfdddd
+-- 105:ffffffffaaaadfdddddddfdddddddfddffffffffddfdaaaaddfdddddddfddddd
+-- 106:333300033300000030000a00300dfafd300faadf300faadf300ddfdd300dfafd
+-- 107:300033330000003300a00003dfafd003faadf003faadf003ddfdd003dfafd003
+-- 108:3300dffd3300aafd3300aafd3300aafd3300aafd3300aafd3300aafd3300dffd
+-- 109:ffffffffddddfdaaddddfdddddddfdddfffffffffdaaaadffddddddffddddddf
+-- 110:ff033333aa033333dd033333dd033333ff033333dd033333dd033333dd033333
+-- 111:3333333333333333333333333333333333333333333333333333333333333333
+-- 112:00addddd00addddd00daaaaa00ffffff00addddd00addddd00daaaaa00ffffff
+-- 113:ddddddddddddddddaaaaaaaaffffffffddddddddddadddddaadaaaaaffffffff
+-- 114:ddddddddddddddddaaaaaaaaffffffffddddddddddddddddaaaaaaaaffffffff
+-- 115:dddddddddddaddddaaadaaaaffffffffddddddddddddddddaaaaaaaaffffffff
+-- 116:ddddddddddddddddaaaaaaaaffffffffdddddddddddaddddaaadaaaaffffffff
+-- 117:ddddda00adddda00daaaad00ffffff00ddddda00ddddda00aaaaad00ffffff00
+-- 118:00addddd00addddd00daaaaa00ffffff00addddd00addddd00daaaaa00ffffff
+-- 119:ddddda00ddadda00aadaad00ffffff00ddddda00ddddda00aaaaad00ffffff00
+-- 120:ffffffffddddddfdddddddfdddddddfdffffffffaadfdddddddfdddddddfdddd
+-- 121:ffffffffaaaadfdddddddfdddddddfddffffffffddfdaaaaddfdddddddfddddd
+-- 122:300dfafd300faadf300faadf300ddddd300aaaaa300000003300000033333333
+-- 123:dfafd003faadf003faadf003ddddd003aaaaa003000000030000003333333333
+-- 124:3300dffd3300aafd3300aafd3300aafd33333333300003300000000000aa0000
+-- 125:ffffffffddddfdaaddddfdddddddfddd333333000003330000003300aa003330
+-- 126:ff033333aa033333dd033333dd03333331aa333311aa111100aa000000aa0000
+-- 127:33333333333333333333333333333333aa133333aa113333aa003333aa003333
+-- 128:333300003330000030000aaa00000aaa00aaaddd00aaaddd00dddddd00dddddd
+-- 129:0033333300033333a0000333a0000033daaa0033daaa0033dddd0033dddd0033
+-- 130:3333333333333333344333333443331333333333333133333333331133333311
+-- 131:3333333333333333333333333333333333333333333333333333333333333333
+-- 132:1000000000011111001113330031333300113333003133330011333300113113
+-- 133:0000011111100011311100113311001113110033331100333311003333110033
+-- 134:1111111111111111111111111111111133311111333333333133331133313311
+-- 135:1111111111111111111111111111111111333333333443333334433333333333
+-- 136:1111111111111111111111111111111133331111333333313333333333333333
+-- 137:1111111111111111111111111111111111111111111111113111111133111111
+-- 138:1111333311113333111133331113333333333333333333333333333333333333
+-- 139:3333333333333333333333333333333333333333333333333333333333333333
+-- 140:00aa000000aa000031aa333331aa333331aa333311aa111100aa000000aa0000
+-- 141:aa000330aa000000aa130000aa130000aa130000aa110000aa000000aa000330
+-- 142:00aa000000aa000031aa333331aa333331aa333311aa111100aa000000dd0000
+-- 143:aa003333aa003333aa133333aa133333aa133333aa113333aa003333dd003333
+-- 144:00000fff30000ddd33300ddd33300ddd33300ddd33300ddd3333333333333333
+-- 145:f0000033d0000333d0033333d0033333d0033333d00333333333333333333333
+-- 146:3333333333333333333333333333333333333333333333333333333333333333
+-- 147:3333333333333333333333333333133333333333343333333333343333333333
+-- 148:0011311300113333001113330011111100211111302222223333333333333333
+-- 149:3311003333110033311300331111003311120033222203333333333333333333
+-- 150:3333333333333333333333333333333333333333333333333333333333333333
+-- 151:3433333333333333333333333333333333333333333333333333333333333333
+-- 152:3333333333333333333333333333333333333333333333333333333333333333
+-- 153:3311111133311111333111113331111133331111333311113333111133331111
+-- 154:3333333333333333333333333333333333333333333333333333333333333333
+-- 155:3333333333333333333333333333333333333333333333333333333333333333
+-- 156:00aa000000aa000031aa333331aa33333330000000000000000033330aaaaaaa
+-- 157:aa000333aa000033aa130033aa130033033000000000000000003333aaaaaaaa
+-- 158:00dd0000000000003000033033333333033000000000000000003333aaaaaaaa
+-- 159:dd003333000033330003333333333333033333330000333300003333aaa03333
+-- 160:2222222222222222222222222222222222200000220000002200daaa2200aaaa
+-- 161:222222222222222222222222222222220000022200000022aaad0022aaaa0022
+-- 162:ffffffffddddddfdddddddaadddddadaffff00daaadf00daddd000daddd00add
+-- 163:ffffffffdddddfddaadddfddadaddfddad00ffffad00aaaaad000ddddda00ddd
+-- 164:ffffffffddddddfdddddddaadddddadaffff00daaadf00daddd000daddd00add
+-- 165:ffffffffdddddfddaadddfddadaddfddad00ffffad00aaaaad000ddddda00ddd
+-- 166:3333333333333333333333333333aaa33333aaa33113aaa33113111333333333
+-- 167:3333333333333333333333333aaaaa333aaaaa333aaaaa333aaaaa333aaaaa33
+-- 168:100aa0f0100aa0f0100aa0f0100aa0f0300adaaa3000aaaa3300000033300000
+-- 169:0f0aa0010f0aa0010f0aa0010f0aa001aaada003aaaa00030000003300000333
+-- 170:100aa0fb100aa0fb100aabfb100aabfb300adaaa3000aaaa3300000033300000
+-- 171:bf0aa001bf0aa001bfbaa001bfbaa001aaada003aaaa00030000003300000333
+-- 172:0ddddddd0ddd3333000033330000333300003333000033330aaaaaaa0ddddddd
+-- 173:dddddddddddd333300003333000033330000333300003333aaaaaaaadddddddd
+-- 174:dddddddddddd333300003333000033330000333300003333aaaaaaaadddddddd
+-- 175:ddd03333ddd0333300003333000033330000333300003333aaa03333ddd03333
+-- 176:2200aaaa0000aaaa0000aaaaaa00aaaaaa00daaaaa00dddddd00dddddd00fddd
+-- 177:aaaa0022aaaa0000aaaa0000aaaa00aaaaad00aadddd00aadddd00dddddf00dd
+-- 178:fff00dfdddd00dd0ddd00dd0ddd00dfdfff000ddaadf0000dddfd000dddfdddd
+-- 179:dfd00fff0dd00fdd0dd00fdddfd00fdddd000fff0000aaaa000dddddddfddddd
+-- 180:fff00dfdddd00dd0ddd00dd7ddd00dfbfff000dbaadf000bdddfd00bdddfdddb
+-- 181:dfd00fff0dd00fdd7dd00fddbfd00fddbd000fffb000aaaab00dddddbdfddddd
+-- 182:33aaaaa333aaaaa333aaaaa333aaaaa333aaaaa3331111133333333333333333
+-- 183:31111133333333333aaa31133aaa31133aaa3333311133333333333333333333
+-- 184:3333333333333333333333333333333333333333333333333333333333333333
+-- 185:3333333333333333333333333333333333333333333333333333333333333333
+-- 186:3333333333333333333333333333333333333333333333333333333333333333
+-- 187:3333333333333333333333333333333333333333333333333333333333333333
+-- 188:0ddd333300001111333333333333333330000000000aaaaa00aa111100a13333
+-- 189:dddd333300001111333333333333333300033333a0003333aa0033331a003333
+-- 190:dddd333300001111333333333333333333333333333333333333333333300000
+-- 191:ddd0333300003333333333333333333333333333333333333333333300000333
+-- 192:fd000fffddd00dffddd00fddddd00dddffd00fddaad00dddddd00fddddd00aff
+-- 193:fff000dfffd00dddddf00dddddd00dddddf00dffddd00daaddf00dddffa00ddd
+-- 194:ffffffffddddddfddddd0000d000000000000ada00d0ddda00dfd00d00dfdddd
+-- 195:ffffffffaaaadfdd0000dfdd0000000dada00000addd0d00d00dfd00ddddfd00
+-- 196:ffffffffddddddfddddd0000d000000000000ada00d0ddda00dfd00d00dfdddd
+-- 197:ffffffffaaaadfdd0000dfdd0000000dada00000addd0d00d00dfd00ddddfd00
+-- 198:300000000000000000faaaaa00afffff00afffff00af000000af000000faaaaa
+-- 199:0000000300000000aaaaaf00fffffa00fffffa000000fa000000fa00aaaaaf00
+-- 200:3300000030000000300faaaa000affff000affff000af000000af000000af000
+-- 201:0000003300000003aaaaf003ffffa003ffffa003000fa003000fa003000fa003
+-- 202:3300000030000000000000aa00000aff0000afff000aff00000af000000da000
+-- 203:000033330000033300000033a0000033fa000033ffa000330ffa003300fa0033
+-- 204:0da333330da333310daa33330d1aaaaa01a113310d1aaaaa0d11133101a11331
+-- 205:3ad033333ad03333aad03333a1d033331a103333a1d0333311d033331a103333
+-- 206:330000003000daaa300adaaa300adaaa300adddd300ddddd300ddfff300ddfdd
+-- 207:00000033aaad0003aaada003aaada003dddda003ddddd003fffdd003ddfdd003
+-- 208:fd000daadd00afdddd00addddd00afddfd00addddd00aadddd00daaadd00dddd
+-- 209:aad000dfddfa00ddddda00ddddfa00ddddda00dfddaa00daaaad00dddddd00dd
+-- 210:0000d0a0d00dd000d000d000dd00dadaff000dddaad00000dddf0000dddfdddd
+-- 211:0a0d0000000dd00d000d000dadad00ddddd00fff00000aaa0000ddddddfddddd
+-- 212:0000d0a0d00dd000d000d007dd00dadbff000ddbaad0000bdddf000bdddfdddb
+-- 213:0a0d0000000dd00d700d000dbdad00ddbdd00fffb0000aaab000ddddbdfddddd
+-- 214:00dddddd00ffffff00dddddd00addddd0000fff03000cdc033300ddd33333333
+-- 215:dddddd00ffffff00dddddd00ddddda000fff00000cdc0003d003333333333333
+-- 216:000af000000faaaa000ddddd000fffff000ddddd000adddd0000f0003300a000
+-- 217:000fa003aaaaf003ddddd003fffff003ddddd003dddda003000f0003000a0033
+-- 218:000fda00000dfda0000ddfda0000ddfd00c00ddf002000dd3022000033322c00
+-- 219:00af00330adf0033adfd0033dfdd0033fdd00033dd0000330000033300033333
+-- 220:001aaaaa00111331333113313333333333333333333333333333333333333333
+-- 221:a100333311003333133333333333333333333333333333333333333333333333
+-- 222:300ddfff300ddddd300ddfdf300ddddd300ddddd333333333333333333333333
+-- 223:fffdd003ddddd003fdfdd003ddddd003ddddd003333333333333333333333333
+-- 224:1100dddd1100fddd110000001110000033333333333333333333333333333333
+-- 225:dddd0011dddf0011000000110000011133333333333333333333333333333333
+-- 226:00aadddd00dddddd00aaffff00aaffff00ddffff00aaffff00aaffff00adaada
+-- 227:ddddaa00dddddd00ffffaa00ffffaa00ffffdd00ffffaa00ffffaa00adaada00
+-- 228:00aadddb00dddddb00aa77bb00aa77bb00ddbbbb00aabbbb00aabbbb00adaada
+-- 229:bdddaa00bddddd00bb77aa00bb77aa00bbbbdd00bbbbaa00bbbbaa00adaada00
+-- 230:33333333300003330000003300aa003300aa000000aa000000aa0ddd00aa0ddd
+-- 231:33333333300003330000003300aa003300aa000000aa0000d0aa0dddd0aa0ddd
+-- 232:33333333300003330000003300aa003300aa000000aa0000d0aa0dddd0aa0ddd
+-- 233:33333333300003330000003300aa003300aa000000aa0000d0aa0dddd0aa0ddd
+-- 234:33333333300003330000003300aa003300aa000000aa0000d0aa0dddd0aa0ddd
+-- 235:33333333300003330000033300aa033300aa033300aa0333d0aa0333d0aa0333
+-- 236:3333333333333333333333333333333333333333333333333333300033330000
+-- 237:3333333333333333333333333333333333333333333333330000033300000033
+-- 238:333333333333333333333333333300003300000030000aaa300adaaa300adaaa
+-- 239:3333333333333333333333330000033300000033aaaa0000aaaa0000aaaadaa0
+-- 240:3333333333333333333333333333333333333333333333333333333333333333
+-- 241:3333333333333333333333333333333333333333333333333333333333333333
+-- 242:00daaada00dfdddd000fdddd3000000033000000333333333333333333333333
+-- 243:adaaad00ddddfd00ddddf0000000000300000033333333333333333333333333
+-- 244:00daaada00dfdddd000fdddd3000000033000000333333333333333333333333
+-- 245:adaaad00ddddfd00ddddf0000000000300000033333333333333333333333333
+-- 246:00dd000000aa000000aa000000aa0ddd00aa0ddd00dd000000aa000000aa0033
+-- 247:00dd000000aa000000aa0000d0aa0dddd0aa0ddd00dd000000aa000000aa0033
+-- 248:00dd000000aa000000aa0000d0aa0dddd0aa0ddd00dd000000aa000000aa0033
+-- 249:00dd000000aa000000aa0000d0aa0dddd0aa0ddd00dd000000aa000000aa0033
+-- 250:00dd000000aa000000aa0000d0aa0dddd0aa0ddd00dd000000aa000000aa0033
+-- 251:00dd033300aa033300aa0333d0aa0333d0aa033300dd033300aa033300aa0333
+-- 252:3333001333330033333300333333003333330011333300023333001133333333
+-- 253:3331003333330033333300333333003311110033222000330011003333333333
+-- 254:300cdaaa300ddccc3000dddd33000ddd33300afd33300aff33300aaa33300ddd
+-- 255:aaaadcc0ccccddd0dddddd00dddd0000ddfa0003fffa0033aaaa0033dddd0033
+-- </TILES>
+
+-- <SPRITES>
+-- 000:00000000000000000000eeee000e0eee00000eee000edddd000de000000ed444
+-- 001:000000000000000000000000ee000000eee00000dddde000000ed000444de000
+-- 002:0000000000000000000000000000021100002111000011410000144400004404
+-- 003:0000000000000000000000001120000011120000114100004444000044040000
+-- 004:0000000000000000000000000000034400003444000014440000144400004400
+-- 005:0000000000000000000000004430000044430000444100004441000040040000
+-- 006:00000000000000000000000000000daa0033daaa00331aaa00013add0000ad6d
+-- 007:000000000000000000000000dad00000daad1300daaa1300adda3000ad6d0000
+-- 008:0000000000000000000000010000021100002111000011410000144400004404
+-- 009:0000000000000000110000001120000011120000114100004444000044040000
+-- 013:06633000600ff30060fef4003fece4003ffee400033340000064000000630000
+-- 014:0000000000055500005666500566656505666556056666550056666500056666
+-- 015:00000000005550000566650056aaa6506aa55650aaa556505555650055665000
+-- 016:0000d4000000044a0000e4d40044eeaa0044eeaa00ee01aa00ee0eea0000eeaa
+-- 017:40040000aa40000044de0000aaae4400aaae4400aaa0ee00aae0ee00aee00000
+-- 018:00003403000003340000ad11000aaaaa0044daaa004401110000022000000110
+-- 019:330300004430000011da0000aaaaa000aaad4400111044000220000001100000
+-- 020:00002441000002220000a122000aa1aa0044d211004401110000022200000111
+-- 021:2142000042200000222a0000aa1aa000112d4400111044002220000011100000
+-- 022:0000a464000003110000ad11000aaa120011da1a00110daa00000ff000000aa0
+-- 023:3463000011100000111a0000221aa000aa1d1100aad011000ff000000aa00000
+-- 024:0000340300000334000042110004440000443441004401110000022000000110
+-- 025:3303000044310000111400000044400014434400111044000220000001100000
+-- 029:0063000033340000003400006324000033640000000000000000000000000000
+-- 030:0000566600000566000000560000000500000000000000000000000000000000
+-- 031:6665000066500000650000005000000000000000000000000000000000000000
+-- 032:0000000000000000000000060000066a00006daa0006fdaa0006dddd0006ddfd
+-- 033:000000000000000060000000a6600000aad60000aadf6000dddd6000fdfd6000
+-- 034:00000000000000000000000000000add00000d0d0000fd0d0000dddd0000d303
+-- 035:000000000000000000000000ddda00000d0d00000d0d0000dddd000033030000
+-- 036:0000000000000000000000000000021100002111000011410000144400004404
+-- 037:0000000000000000000000001120000011120000114100004444000044040000
+-- 038:0000000000000000000000000000024100001414000011410002111100011104
+-- 039:0000000000000000000000001120000011110000111100001441200044041000
+-- 040:00000000000000000000000000000dda0000dddd0000ddda000ddd33000ad344
+-- 041:000000000000000000000000add00000aadd0000addd00003dddd00044dda000
+-- 048:0006ddfd0006dddd006aafff006aadaa06ffddaf06ff022200000ff000000aa0
+-- 049:fdfd6000dddd6000fffaa600aadaa600faddff602220ff600ff000000aa00000
+-- 050:0000d4040000d443000aa000000aadaa00ffddaf00ff011100000ff000000aa0
+-- 051:4404000033440000000aa000aadaa000faddff001110ff000ff000000aa00000
+-- 052:0000340300000334000aa000000aadaa00ffddaf00ff011100000ff000000aa0
+-- 053:3303000044300000000aa000aadaa000faddff001110ff000ff000000aa00000
+-- 054:00011404000114440001114400041133004441ee004401dd00000eee0000eeee
+-- 055:440430003444100044421000332e4000dee444001dd04400eee00000dee00000
+-- 056:000aa400000ad444000ddd4400042d3300444222004401110000022200002222
+-- 057:400aa0003444a000444dd00033d2400012244400d11041002220100012201000
+-- 064:00000000000000000000000000000000000000bb00000bbb00000bbb00000b6b
+-- 065:00000000000000000000000000000000bb000000bbb00000bbb00000b6b00000
+-- 066:00000000000000000000014400001c4400004444000044330000444c0000344c
+-- 067:0000000000000000441000004441000044440000333400000c4400000c430000
+-- 068:0000000000000000000600650060566500000665000606660060522200002444
+-- 069:0000000000000000560060005665060056600000666060002225060044420000
+-- 070:0000000000000000000011110001021100000111000133330003122200011222
+-- 071:0000000000000000000000001100000011100000333310002221300022211000
+-- 072:00000000000000000000000100000211000021110000777b0000144300004404
+-- 073:0000000000000000110000001120000011120000bb7700003344000044040000
+-- 080:00007b0b00007bbb000b7bb2000b7bb200000bbb000000bb0000000000000000
+-- 081:b0b70000bbb700002bb7b0002bb7b000bbb00000bb0000000000000000000000
+-- 082:0000044400041111004441000044342200440442001102110044011000000110
+-- 083:4441000011144000004444004443440024404400112011000110440001100000
+-- 084:0006140400600041005560000055660000660000000666000000000000000000
+-- 085:4041600014000600000655000066550000006600006660000000000000000000
+-- 086:000112620002122a000012d2004411aa004411aa001101aa0011011a000011aa
+-- 087:22611000aa21200022d10000aaa14400aaa14400aaa01100aa101100a1100000
+-- 088:0000340400000342000072220001770000131711001107770000022000000110
+-- 089:4403000022310000122700000077100077713100117011000220000001100000
+-- 096:0000000000000000000000000000000000000020000200f100222211002222c1
+-- 097:00000000000000000000000000000000020000001f002000112222001c222200
+-- 098:00000000000000000000000000000daa0000daaa0000aaaa0000aa660000aa66
+-- 099:000000000000000000000000aad00000aaad0000aaaa0000a66a0000a66a0000
+-- 100:000000000000000000d0001100aaf11300a002130000021100daf11100a00f12
+-- 101:000000000000000011000d00311faa0031200a0011200000111fad0021f00a00
+-- 102:0000000000000000000000330000330000030000003000330030133300311311
+-- 103:0000000000000000330000000030000000000000330000003331000011311000
+-- 104:0000000000000000000000330000330000030000003000aa0030daaa003ddadd
+-- 105:0000000000000000330000000030000000000000aa000000aaad0000ddadd000
+-- 112:0022311100222011002020ff0000002000000000000000000000000000000000
+-- 113:1113220011022200ff0202000200000000000000000000000000000000000000
+-- 114:0000aaaa0000aaa200a0aaa200aadaa200aadaaa00aa0aaa000a00dd00000aaa
+-- 115:aaaa000022aa000022aa0a00a2adaa00aaadaa00aaa0aa00ddd0a000aa000000
+-- 116:00a0d02100a0a01100a0a0c10000a0010000d00000000a000000000000000000
+-- 117:120d0a00110a0a001c0a0a00100a0000000d000000a000000000000000000000
+-- 118:00011111000111100001000000a0a00000000000000000030000000000000000
+-- 119:0011000033003300111133001010100011111000111000000000000000000000
+-- 120:000ddddd000dddd0000d000000a0a000000000000000000a0000000000000000
+-- 121:00dd0000aa00aa00ddddaa00d0d0d000ddddd000ddd000000000000000000000
+-- 128:0000000000000000001dd111001aa333001aa333001aa333001aa333001dd111
+-- 129:0000000000000000111dd100333aa100333aa100333aa100333aa100111dd100
+-- 130:0000000000000000001dd111001aa333001dd1aa00aaafa000aaafa0002000aa
+-- 131:0000000000000000111dd100333aa100aa1dd1000afaaa000afaaa00aa000200
+-- 132:001dd111001aa333001dd1aa00aaafa000aaafa0002000aa0020000000200000
+-- 133:111dd100333aa100aa1dd1000afaaa000afaaa00aa0002000000020000000200
+-- 134:001dd111001aa333001dd1aa00aaafa000aaafa00020d0aa0020c00000200002
+-- 135:111dd100333aa100aa1dd1000afaaa000afaaa00aa0d0200000c020020000200
+-- 136:00000000000000000000a301006ad00106adddf306adddf106adddf106adddf3
+-- 137:000000000000000010aa0000100da6003fddd3601fddda601fddda603fddda60
+-- 144:001dd1aa00aaafa000aaafa000f222aa00a1112200aaaaaa0000000000000000
+-- 145:aa1dd1000afaaa000afaaa00aa222f0022111a00aaaaaa000000000000000000
+-- 146:00200000001000000011111100f2222200a1111100aaaaaa0000000000000000
+-- 147:00000200000001001111110022222f0011111a00aaaaaa000000000000000000
+-- 148:00100000001000000011111100f2222200a1111100aaaaaa0000000000000000
+-- 149:00000100000001001111110022222f0011111a00aaaaaa000000000000000000
+-- 150:0010c0660010a0560011115500f2225500a1111500aaaaaa0000000000000000
+-- 151:660c0100650a01005511110055222f0051111a00aaaaaa000000000000000000
+-- 152:000ad0010000aa010000000100000001000000010000000d0000000700000000
+-- 153:100da60010aa0000100000001000000010000000d00000007000000000000000
+-- 154:000000000000000000000000000000000000000000000000000000000000da00
+-- 156:0000000000000000000000000000000000000000000000000000000000001300
+-- 160:00000000000000000000000000000daa00000a1100000a1a00000a1a00000a11
+-- 161:000000000000000000000000aad0000011a00000a1a00000a1a0000011a00000
+-- 162:00000000000000000000000000000daa00000aaa00000aaa00000add00000add
+-- 163:000000000000000000000000aad00000dda00000dda00000aaa00000aaa00000
+-- 164:0000000000000000000000000000000a0000000a0000000a0000000a0000000d
+-- 165:0000000000000000a0000000a0000000a0000000a0000000a0000000d0000000
+-- 166:000000000000000a0000000a0000000a0000000a0000000a0000000a0000000a
+-- 167:a0000000a0000000a0000000a0000000a0000000a0000000a0000000a0000000
+-- 168:00000ad00000add0000addd0000dddd0000dddd00000ff000000dd000000dd00
+-- 170:000ddaa0000ddaa0000ddaa0000ddaa0000ddaa0000ddaa0000ddaa00000dd00
+-- 172:0001133000011330000113300001133000011330000113300001133000006600
+-- 176:00000daa00000000000000000000000000000000000000000000000000000000
+-- 177:aad0000000000000000000000000000000000000000000000000000000000000
+-- 178:000000aa00000000000000000000000000000000000000000000000000000000
+-- 179:aa00000000000000000000000000000000000000000000000000000000000000
+-- 180:000000aa00000001000000010000000000000000000000000000000000000000
+-- 181:aa00000010000000100000000000000000000000000000000000000000000000
+-- 182:0000000d000000aa000000010000000100000000000000000000000000000000
+-- 183:d0000000aa000000100000001000000000000000000000000000000000000000
+-- 184:000aaaa000001100000011000000000000000000000000000000000000001100
+-- 186:000aaaa00000110000001100000000000000000000000000000000000aa0110a
+-- 187:00000000000000000000000000000000000000000000000000000000a0000000
+-- 188:00aa66aa0000110000001100000000000000000000000000000000000aa01100
+-- 192:000000000000000000000013000000130000000d0000000a000000aa00000daa
+-- 193:00000000000000003100000031000000d0000000a0000000aa000000aad00000
+-- 194:000000000000000000000013000000130000000d0000000a000000bb000007bb
+-- 195:00000000000000003100000031000000d0000000a0000000bb000000bb700000
+-- 196:000000000000000000000013000000130000000d0000000a0000005500000655
+-- 197:00000000000000003100000031000000d0000000a00000005500000055600000
+-- 198:000000000000000000000013000000130000000d0000000a000000bb000009bb
+-- 199:00000000000000003100000031000000d0000000a0000000bb000000bb900000
+-- 200:0daaaafa0aaaaaaa0aaaaaaa0aaaaaaa0dafaaaa000022000000110000003300
+-- 201:d0000000a000000aa000000aa000000ad000000a000000000000000000000000
+-- 202:ad001100dddf33fddddf11fddddf11fddddf33fdad0011000aa0110a00001100
+-- 203:da000000dda0000adda0000adda0000adda0000ada000000a000000000000000
+-- 204:ad001100dddf3300dddf1100dddf1100dddf3300ad0011000aa0110000001100
+-- 208:00000ddd00000ddd000000dd0000000000000000000000000000000000000000
+-- 209:ddd00000ddd00000dd0000000000000000000000000000000000000000000000
+-- 210:0000077700000777000000770000000000000000000000000000000000000000
+-- 211:7770000077700000770000000000000000000000000000000000000000000000
+-- 212:0000066600000666000000660000000000000000000000000000000000000000
+-- 213:6660000066600000660000000000000000000000000000000000000000000000
+-- 214:0000099900000999000000990000000000000000000000000000000000000000
+-- 215:9990000099900000990000000000000000000000000000000000000000000000
+-- 216:000011000000330000001100000000000000000000000000000000000000dd00
+-- 218:000011000000110000001100000000000000000000000000000000000000bb00
+-- 220:0000110000001100000011000000000000000000000000000000000000000a00
+-- 224:00000000000000000000001300000013000000aa0000000d0000000a0000000a
+-- 225:00000000000000003100000031000000aa000000d0000000a0000000a0000000
+-- 226:00000000000000000000001300000013000000aa0000000d0000000b0000000b
+-- 227:00000000000000003100000031000000aa000000d0000000b0000000b0000000
+-- 228:00000000000000000000001300000013000000aa0000000d0000000500000005
+-- 229:00000000000000003100000031000000aa000000d00000005000000050000000
+-- 230:00000000000000000000001300000013000000aa0000000d0000000b0000000b
+-- 231:00000000000000003100000031000000aa000000d0000000b0000000b0000000
+-- 232:0000dd000001dd100001dd100003113000002200000011000000110000001100
+-- 234:0000bb000001bb100001bb100003113000002200000011000000011000001110
+-- 236:0000aa000000aa00000daad00000220000001100000011000000310000001300
+-- 240:0000000d0000000d0000000d0000000000000000000000000000000000000000
+-- 241:d0000000d0000000d00000000000000000000000000000000000000000000000
+-- 242:0000000700000007000000070000000000000000000000000000000000000000
+-- 243:7000000070000000700000000000000000000000000000000000000000000000
+-- 244:0000000600000006000000060000000000000000000000000000000000000000
+-- 245:6000000060000000600000000000000000000000000000000000000000000000
+-- 246:0000000900000009000000090000000000000000000000000000000000000000
+-- 247:9000000090000000900000000000000000000000000000000000000000000000
+-- 248:0000330000001100000011000000000000000000000000000000000000000000
+-- 250:0001110000011000000011000000000000000000000000000000000000000000
+-- 252:0000310000001300000011000000000000000000000000000000000000000000
+-- </SPRITES>
+
+-- <MAP>
+-- 000:6e7e6e7e869631415141514141b320b2f4f4f4f48090a090a090a0b06f7f8ff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f42838f4f42838f4f4f4320b1b63874252874252b141514151415141514151415141515161f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4866e7e
+-- 001:6f7f6f7f8797b2354555650491a120b2f4f4f4f4b2455535455565626e7e8e9e6e7e8e9eae6e7e8e9eae6e7e8e9eae6e7e8e9eae6e7eaebef428382838f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f42939f4f42939f4f4f4320c1c63a4b4a4b4a4b43286968696968696869686968696869662f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4876f7f
+-- 002:62f5f58090a0b32020202020202020b2f4f48090b3202020202020626f7f8f9f6f7f8f9faf6f7f8f9faf6f7f8f9faf6f7f8f9faf6f7fafbff429392939f4f4f4f4f4f42838f4f4f4f4f4f42838f42838f4f4f4f4f4f4f4f4320c1c63a5b5a5b5a5b5338696879797879787978797879786968090a0b031415161f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4cadacadacadacadaeadaeacadaeacadaeacadaeacadaea3186f4f4
+-- 003:63f5f58191a1b12020202020021220b2f4f4632020202020200212626979f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f47af4bef42838f4f42838f4f4f4f42939f4f4f4f4f4f42939f42939f4f4f4f4f4f4f4f4320c1c6380908090a0b0328696314151618787973141516186960b1b0b1b320b1b63f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4cbdbf4f4f4f4f4f4f4f4f4f4cbdbf46af4f432878696
+-- 004:63ecfc822014132020202020031320344454642020202020200313622838f4f4f4f4f4f4f4f4f4f4f4f4f40818f4f4f4f4f40818f4f4f4bff42939f4f42939f4f4f4f4f4f42838283828382838f4f4f4f4f4282838f4f4f4320c1c634c5c2a3a4c5c328696c24a5af2868686964a5af286960c1c0c1c320c1c63f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4f4f4f4f4ccdcf4f4f4f4f4f4ecfcf4f4ccdc6a7a382833868797
+-- 005:62edfd63202031415190a090a0b020202020202020202020202020622939f4f4f4f4f42838f42838f428380919f4f4f4f4f40919f4f4f4bef4f4f42838f4f4f4f4f4f4f4f42939293929392939f4f4f4f4f4292939f4f4f4320c1c634d5d2b3b4d5d328797c34b5bf3878787974b5bf387970d1d0d1d320c1c63f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4cdddf4f4f4f4f4f4ecfcf4f4cddd6b7b6b7b33878696
+-- 006:63283863202032878786868686b141514151415141514141510b1b622838f4f4f4f4f42939f42939f42939f4f4f4f4f4f4f4f4f4f4f4f4bff4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4320c1c634e5e2e3e4e5e889878f4aaba68786878f4aaba6868780e1e0e1e320c1c63f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4f4f4f4f4f4f4f4f4edfdf4f4f4f4f4f4f4f433868797
+-- 007:62293963202034b07888687888b286968696c0d0e0f08696840c1c632939f42838f4f4283828382838f4f4f4f42838f4f42838f4f4f4f4be2838f4f4f4f4f428382838f4f4283838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4320c1c634f5f2f3f4f5f8999f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4320c1c63f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f433878696
+-- 008:63283863202092b138382828383487978797c1d1e1f18797850d1d642838f42939f4f4293929392939f4f4f4f42939f4f42939f4f4f4f4bf2939f4f4f4283829392939f4f4293939f4f4f4f4f4f4f4f4f4f4f4f4f42838f4320c1c63f42939f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4320c1c63f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4f4384858f4f4f4f4f4f4f4f4f4f4f4f4f4f433868797
+-- 009:83a3a3838393a3b339392929396878687888687888687888687888982939f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f42838f4f4bef4f4f4f4f42939f4f4f4f428382838f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4320c1c63f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f42838f4f4320c1c63f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4f4f4f4f4f4394959f4f4f4f4f4f6f6f64858f4f4f4f433878696
+-- 010:96b13838868494f2382838283828382838f589f5f5f589f589286a6a6a7a6a7a6a7a6a7a6a7a6a7af4f4f42939f4f4f4f4f4f42939f4f4bff4f4f4f4f4f4f42838f4f429392939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4320c1c63f4f4f4f4f4f400f42939f4f4f4f4f4f4f4f4f4f4f4f42939f4f4320c1c63f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f6f6394959f4f4f4f433868786
+-- 011:97b13939878595f23929283838293929392828386af50818f5296a6a6b7b6b7b6b7b6b7b6b7b6b7bf4f4f4f4f4f4f4f4f4f4f4f4f4f4f46e7e8e9eaebef4f4293928382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4340c1c622838f4f4f4f42838f4f4f4f4f4f42838f4f4f4f4283828382838320c1c63f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4ecfcf4f4f4f4f4081833878687
+-- 012:96b1797968687888388929286a6a7a7a7a6a7a6a6af509196a7a6a6a2838f4f4f4f4f4f4f4f46a7af4f4f48090a0909090a0b0a0b08090a08090a0b0b0f4f4f4282939293980445444544444544454445444544454445444540c1c622939f4f4f4f42939f4f4f4f4f4f42939f4f4f4f4293929392939320c1c63f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4edfdf4f4f4f4f4091933868786
+-- 013:97b17a6a7a283829390818296b6b7b6a7a6b7b38ecfc28386b7b28382838f4f4f42838f4f4f46b7bf480908180908090a0b0b10a1a8494868494a4b4b1f4f4f42939f4f4f481879787978787978797879787978797879787970d1d64f4f4f4f4f4f42838f4f4f4f4f4f4f4f428382838f4f428383151b30c1c63f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f433868687
+-- 014:96b17b6b7b6a7a89890919286a6b7b6b7b292939edfd2838283828283839f4f4f42939f4f4f46a7af40b1b4c5c869686964c5c0b1b8595868595a5b5b1f4f42838f4f4f4f463686878886888687888687888687888687888880e1ef4f4f4f4f4f4f42939f4f4f4f4f4f4f4f428392939f4f429393286860c1c6228f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4f4f4f4f4f4f4f4081828f4f4f4f4f4f4f4f433878786
+-- 015:86b13828386b7b6a7a6a7a6a6b7b28383828380038283838293928383828282828f4f42838286b7bf40c1c4d5d869686964d5d0c1c8696868696e0f0b2314151415141514164f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428f4f4f4f4f4f4f43287870c1c6229f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4f4f4f4f4f4f4f4f4f4f4f4091929f4f4f4f48c9c8c9c33868687
+-- 016:86b139293929396b7b6b7b6b7b3929393929392939293939293929392828282828f4f42939296b7bf40d1d4e5e879787974e5e0d1d8797878797e1f1b3879787978797879797f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428f4f4f4f4f4f4f43387870d1d64f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f48d9d8d9d33869696
+-- 017:87978e9eae6e7e8e6e7e8e6e6e7e6e7e7e8e9eae7e6e6e7e6e7e6e7e8e6c7cf428f4f4f4f4f46a7af40e1e4f5f686878884f5f0e1e68786868786676a8687868788868786888f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428f4f4f4f4f4f4f4338686b21e62f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4283141516133879797
+-- 018:4151415141514151415141515141514151415141514151415141514151b03e28f4f4f4f4f4f46b7bf4f4f4f4f4f4f42939f4f4f4f429392939f46777f42838f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4338686b28762f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4f4f4f4f4f4f4081828f4f4f4f4293286966233634151
+-- 019:9686968696869686968696869686968696869686968696869686968696b12828f4f4f4f4f428387a6a7a6a7af46a7a6a7a6a7a6a7a6a7af42838f4f4f42928f4f42828f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428f4f4f4f42828f4338787b28762f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4f4f4f4f4f4f4f4f4f4f40919292838f4acbc3387976333628686
+-- 020:9787978797879787978797879787978797879787978797879787978797b2f4f4f4f4f4f4f429397b6b7b6b7bf46b7b6b7b6b7b6b7b6b7bf42939f4f4f4f4f42828f428f4f4f4f4f4f4f4f431414151415141514151b02838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428282828288090a090b38762f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4adbd3444546434648787
+-- 021:8868788868788868788868788888687888687888687888687888687888b2f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f6f4f4f4f4f4f4f4f4f4f4f4f4f428f4f428f4f4f4f4f4f4f4f432707070707070707070b12939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42828f4f429392881425287878762f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838286878686878886878
+-- 022:f4f42838283828382838f4f4f4f4f4f4f4f4f42939f4f4293929392939b2f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f62828282828f4f4f4f4f4f4f4f4f4f4f4f4f428f4f4f428f4f4f4b2707070202020707070b2f4f4f42838f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f42828f4f4f4f4f462435331445464f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4293929392939f4f4f4
+-- 023:f4f42939293929392939f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4b2f4f4f4f4f42838283828382838f4f4f4f4f4f4f6f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42828f42828f4f4f4b2707070202012707070b2f4f4f42939f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f42939f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4f4f4f4f4f4f4f4f4f4f4f428382838f4f4f4f4f4f4f4f4f4f4f4
+-- 024:f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f42931415141415161f4f4f4f4b2f4f4f4f4f42939293929392939f4f4f4f4f4f43151415141514151415141515161f4f4f4f4f4f42828f4f4f4f4b2707040500313314454b32838f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4f4f4f4f4f4f4f4f4f4f4f429392939f4f4f4f4f4f4f4f4f4f4f4
+-- 025:f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f432455545455562f4f4f4f4b2f4f4f4f4f4f4f4f4f4f4f428382838283828383245552020455545554555455562f4f4f4f4f4f4f4f4f4f4f4f4b2703141516170328696b12939282939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4
+-- 026:f4f4f4f4f4f42838f4f4f4f4f4f42838f4f432021214142463f4f4f4f4b2f4f4f4f4f4f4f4f4f4f4f48090a0a0a0a093a3b320202020202020202020202063f4f4f4f4f4f4f4f4f4f4f4f4b2703242526270b28797b2283828f4f4f4f4f4f42838f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4
+-- 027:f42838f4f4f42939f4f4f4f4f4f42939f4f432031315142462f4f4f4f480909090a0b0f4f4f4f4f4f4814555455545554555112120202020202020202020622838f4f48090a090a090a0a3b3703343536370b2be7888293928f4f4f4f4f4f42939f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428382838f4f4f4
+-- 028:f42939f4f4f4f4f42838f4f4f4f4f4f4f4f4b2041415152562f4a6b6f48142524252b1061626364656822020202020202020314151611520152020201515622939f4f4814555455545202020203444546470b2bff4f4f4f4f428f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429392939f42838
+-- 029:f4f4f4f4f4f4f4f42939f4f4f4f4f48093a3b30515314154648090a0b08243534353b207172737475782202020202020202032425262151515122020151262f5f4f4f4821414202020201420707045707070b2bef4f42838f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4af41514151415141514151514151515151caf4f4f4f4f4f4f4f4f4f42939
+-- 030:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4818494868684948686849486849483939393a3b306162636465682151220202020202133435363031503132020031382f4f42828631414142020210212707070707070b2bff4f42939f428f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4ae86868686868686868686868686868787caf4f4f4f4f4f4f4f4f4f42838
+-- 031:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4828595878785958787859587859584868686a4b40717273747578203137020212020213444546420202020202020208390904454640314202020200313202020207070b1bef4f42838f428f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4af87878787878787878787878787328686ca2939f42838f42929f4f42939
+-- 032:f4f4f4f4f4f4f4f4f4f428382838f482861cd0e0f0968686869686869686868686a5b506162636465682708090a0b07070703545556520202021202120207070207070707020202120707070702020202070b2bff4f42939f428f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aeaebeaebeaebeaebeaebeaebeae328787caf4f4f42939f4f4f4f4f4f4f4
+-- 033:f4f4f4f4f4f4f4f4f4f429392939f483871dd1e1f197878787978787978787878787870717273747578270812838b1708090a0b090a0b0a090a0b02020202020304050607070804190a090a090a09090a0a3b38090a0b08090a0b08090a0b08090a0b08090a0b0f4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afafbfafbfafbfafbfafbfafbfaf328686ca2939f42838f429f4f4f4f4f4
+-- 034:f4f4f4f4ebfbf4f4f4f4f4f4f4f478328686ca687888788878886878886878889898a86979696979f48270822939b27081849486968696868696b120202015153141516170708184948494849484948494e2f20b1b0b1b0b1b0b1b0b1b0b1b0b1b0b1b0b1b0b1bf4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4328787caf4f4f42939f4f429f4f4f4f4
+-- 035:f4f4f4f4ecfcf4ecfc38ecfcf4f4f4328787caf4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f46a7a6a6a7af482708393a3b37081859587978797878797b220202015123242526270706286969686968676d0e0f0e2f20c1c0c1c0c1c0c1c0c1c0c1c0c1c0c1c0c1c0c1cf4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4328686caf4f4f42838f4f4f428382838
+-- 036:f4f4f4f4edfdf4edfd39edfdf4f4f4328686ca6a7af4f4f4f4f4f4081828f4f4f4f4f46b7b6b6b7bf4827070707070708229392939f4f4f4f5f53320202103133343536370706387979787978776d1e1f1e3f30d1d0d1d0d1d0d1d0d1d0d1d0d1d0d1d0d1d0d1df4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4328787caf4f4f42939f4f4f429392939
+-- 037:2838f4f4ecfcf4ecfcecfcecfcf4f4328787ca6b7bf4f4f4f4f4f4091929f4f4f46a7a6979697969798393a393a3b354642939f4f4f4f4f4f5f5332020202020344454647070626878886878687888687888980e1e0e1e0e1e0e1e0e1e0e1e0e1e0e1e0e1e0e1ef4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428384858f4f4f4f4f4f4328686caf4f4f4f4f4f4f4f4f4f4f4f4
+-- 038:29ecfcf4edfdf4edfdedfdedfdf428328686caf4f4f4f4f4f4f4f4f4f4f4f4f4f46b7b6a7a6a7a6a7a86968696849486f22838f4f4f4f4f4293932202020202135455565707063f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429394959f4f4f4f4f4f4328686caf4f4f4f4f4f4f4f4f4f4f4f4
+-- 039:f4edfd38ecfcf4f428382838ecfc29328787caf4f4f4f4eefef4f4f4f4f4f4f4f4f4f46b7b6b7b6b7b87978797859587f32939f4f42838f4f4f432201115217070707070707062f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4328686caf4f4f4f4f4f4f4f4f4f4f4f4
+-- 040:f4f42939edfdecfc29ecfc39edfd78328686caf4f4f4f4effff4f4f4f42838f4f4f4f4f4f4f4f4283868786878687898a8f4f4f4f4f439f4f4f432112104147004140414041463f4f4f400f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428384858f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4328686caf4f4f4f4f4f4f4f4f4f4f4f4
+-- 041:f4ecfcf4ecfcedfdf4edfdf4f4f4f4328787caf4f4cedef4f4f4cedef42939f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f428f4f4f4f4f4f433700505157005150515051563f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429394959f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4328787caf4f4f4f4f4f4f4f4f4f4f4f4
+-- 042:f4edfdf4edfd2939f4f4f4f4f4f4f4328686caf4f4cfdff4f4f4cfdff4f4f42838f4f4f4f4f4f4f4f4f4f428382838f4f4f4f42939f4f4f4f4f43444544454445444544454546438f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4328787caf4f4f4f4f4f4f4f4f4f4f4f4
+-- 043:f4f4f4f42838f4f4f4f4f4f4f4f4f4328787caf4f4f4f4f46a7af4f4f4f4f42939f4f4f4f4f4f4f4f4f4f429392939f4f4f4f4f4f4f4f4f4f431418494869686968696849441415161f4f4f4f4f4f4f4f4f4f4f4f429392939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4328686caf4f4f4f4f4f4f4f4f4f4f4f4
+-- 044:7ef4f4f4f4f4f4f4f4f4f4f4f4f4f4328686ca28f4f4f4f46b7bf4f4f4f4f4f4f42838f4f4283828382838f4f4f4f4f4f4f4f4f4f4f4f4f4f40b1b859587978797879785950b1b0b1b514151415141514151414151415141515161bef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4624353322838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428384858f4f4328787caf4f4f4f4f4f4f4f4f4f4f46e
+-- 045:7f4151415141514141514151415141328787ca29f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4293929392939f4f4f4f4f4f4f4f4f4f4f4f4f4f40c1c86962a3a862c3c8686960c1c0c1c868686868686868686868686868686865262bff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4624252322939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429394959f4f4328686caf4f4f4f4f4f4f4f4f4f4f46f
+-- 046:7e8686868686868686868686868686b3786878f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f40d1d87972b3b872d3d8787970d1d0d1d878787878787878787878787878787875363bef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4624353322838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4328787caf4f4f4f4f4f4f4f4f4f4f46e
+-- 047:7f8787ca6868687868786878686878a8f4f4f4f4f4f4f42838f4f4f4f4f4f46979f4697969796979697969796979697969796979f4f4f4f4f40e1e68786868782e3e6868780e1e0e1e687888687888687888687888686831415464bff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4624252322939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4283828382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4328686caf4f4f4f4f4f4f4f4f4f4f46f
+-- 048:7e8686caf4f5f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f46a7af46a7a6a7a6a7a6a7a6a7a6a7a6a7a6a7a6a7af4f4f4f42838f4f4f4f4f4f42f3ff4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f432283862bef4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4624353322838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4293929392939f4f4f428384858f4f4f4f4f4f4f4f4f4f4328686caf4f4f4f4f4f4f4f4f4f4f46e
+-- 049:7f8787caf4f53828382838f4f4f4f4283800382838f4f4f4f4f4f4f4f4f4f46b7bf46b7b6b7b6b7b6b7b6b7b6b7b6b7b6b7b6b7bf4f4f4f42939f4f4f4f4f4f4f4f4f4f429283828382838f4f4f4f4f4f4f4f44858f4f433293963bff4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4624252322939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f42838f4f4f429394959f4f4f4f4f4f4f4f4f4f4328686caf4f4f4f428384858f4f4f46f
+-- 050:7e8686caf4293929293939f4f4f4f4293929392939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f428382838f428382838f4f4f4f4f4f4f4293929392939f4f4f4f4f4f4f4f44959f4f432283863bef4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4328686caf4f4f4f429394959f4f4f46e
+-- 051:f48686caf4f4f4f4f4f4f4f4f4f4f429392939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f429392939f429392939f4f4f4f4f42838f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f433293963bff4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4328787caf4f4f4f4f4f4f4f4f4f4f4f4
+-- 052:515151caf46a7af4f4f4f4f4f42838f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428382838f4f4f4f4f4f42838f4f4f4f4f42939f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f432283863bef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f433415141514151415141514151415141
+-- 053:868787caf46b7bf4f4f4f4f4f42939f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429392939f4f4f4f4f4f42939f4f4f4f4f428382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f433293963bff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f434868686868686868686868686868686
+-- 054:328686caf428382838f4f4f4f428382838f4f42838f4f42838f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4283828382838f4f4f4f4f4f4f4f4f429392939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f432283863bef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4687868786878687868786878686878
+-- 055:328787caf429392939f4f4f4f429392939f4f42939f4f42939f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4293929081839f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f428384858f4f4f4f4f4f4f433293963bff4f4f428382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4283828382838283828382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 056:328686caf4f4f4f4f4f4f4f4f4f4081838f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f42838f4f4f4f4f4f4f40919f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429394959f4f4f4f4f4f4f432283863bef42838293929392838f4f4f4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4293929392939293929392939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 057:328787caf4f4f4f4f4f4f4f4f4f4091939f4f4f4f4f4f4f4f408182939f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f433293982bf382939f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428384858f4f4f4f4f4f4f4f4
+-- 058:328686caf4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f409192838f4f42838f4f428382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f6f42939f4f4f4f4f4f4f4f4f432283883544151415161bef42838f4f4f4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429394959f4f4f4f4f4f4f428
+-- 059:328787caf4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429cedef42939f4f429392939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f44858f4f4f4f4f4f4f4f4f4282828f638f4f4f4f4f4f4f4f4f433293928383838f4f462bff429392838f4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f428382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429
+-- 060:328686caf4f4f4f4f4f4002838f4f4f4f4f4f4f4f428382838f4f4f4cfdff42838f4f428382838f40818f4f42838f4f4f4f428382838f4f4f4f4f4f428284959f4f4f4f4f4f4f4f4f4f42939f6f628f4f4f431415161f433293929393939f42862bef4f4f42939f4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f42838293929392838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4283828382838f4f4f4f42838f4f42838f4f4f4f4f4f4f4f4f4f428
+-- 061:328686caf4f4f4f4f4f4f42939f4f4f40818f4f4f429392939f4f4f4f4f4f42939f4f429392939f40919f4f42939f4f4f4f429392939f4f4f4f4f42828f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4282939c24a5af2f434445151415161f42962bff42838f4f4f4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f42939f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4293929392939f4f4f4f42939f4f42939f4f4f4f4f4f4f4f4f4f429
+-- 062:328686caf4f5f5f46a7a2939f4f4f4f40919f4f4f4f46a7af4f40818f4f4f42838f4f42838f4f4f4f4f4f4f4cede2838f4f40818283828382838f4f42828282828f4f4f4f4f4f4f4f4f4f4f4f40028f6f4f4c34b5bf328c6879787879762f4f462bef42939f4f4f4f4f4f4f4f42838f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 063:328686caf4f5f5f46b7bf4f4f4f4f4f4f4f4f4f4f4f46b7bf4f40919f4f4f4293928382939f4f4f4f4f4f4f4cfdf2939f4f409192939f6f6f639f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42828282828f4aaba282868687868788862283862bff42838f4f4f4f4f4f4f4f42939f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f429392838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 064:328787caf4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429392939f462293962bef42939f4f4f4f4f4f4f4f42838f4f4f4f462425232f4f4f4f4f4f4f42838f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4
+-- 065:32514141514151415141514151415141514151415141514151415141514151415141514151415141415141514151415141514151415141514151414151415141514151415141514151415141514151415141514151414151415141514162283862bff4f4f4f4f4f4f4f4f4f4f42939f4f4f4f462435332f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4
+-- 066:33868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686865363293962bef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4
+-- 067:34878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787875464f4f462bff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462435332f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4
+-- 068:f4687888687888687888687888687868688868788868687888687888687888687868688868788868886878886878886878886878686888687888686878886878886878886878886878686888687888687888687888687888686878683228383164bef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f462425232f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 069:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42928382828382838f4f4f4f4f4f428382838f433293932be68f4f4f4f4f4f4f4f4f4f4f4f400f4f4f4f462435332f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 070:f4f4f4f4f4f4f4f4283828382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429392929392939f4f4f4f4f4f429392939f432293932bf382838f4f4f4f4f4f42838283828282939f462425232f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f42838f428382838f4f42838f4f4
+-- 071:f4f4f4f4f4f4f4f4293929392939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428382838f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f433283832be392939f4f4f4f4f4f4293929392929f4f4f4624353322838f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f42939f429392939f4f42939f4f4
+-- 072:f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f428382838f4f4f4f4f4f4f4f4f4f4f4f429392939f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f433293932bff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f439f4624252322939f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f42838f4f4
+-- 073:f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f429392939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f42838f4f4f4f4f429392939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f43444515141514451514151445151415144515141515141624353b22838f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f42939f4f4
+-- 074:f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f428382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4c687978787978797878797879787879787978797878754649090b32939f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f42838
+-- 075:f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4293929392838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f428382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f46868786878886878687888687868788868786878886878f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f42939
+-- 076:f42838f4f4f4f4283828382838f4f42838f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428382838f4f4f4f4f4f42838f4f4f4f4f4f4f4f428382838293929392838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f42838f4f4f4f4f4
+-- 077:f42939f4f4f4f4293929392939f4f42939f4f4f4f4f428382838f4f42838f4f4f4f4f4f4f4f4f4f4283828382838f42838293929392838f4f4f4f42939f4f4f4f4f4f4f4f429392939f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f42939f4f4f4f4f4
+-- 078:f4f4f4283828382838f4f428382838f4f4f4f4f4f4f429392939f4f42939f4f4f4f4f4f4f4f4f4f4293929392939f42939f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838293929392838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4
+-- 079:f4f4f4293929392939f4f429392939f42838f4f4f4f4f4f4f4f4f4f42838f4f428382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429392838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4
+-- 080:f4f4f42838f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f42939f4f429392939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429392838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4
+-- 081:f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838293929392838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429392838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4
+-- 082:38f4f42838f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428382838f4f4f4f4f4f428
+-- 083:39f4f42939f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f428382838f4f4f4f4f4f428382838f4f4f4f4f4f428382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429392939f4f4f4f4f4f429
+-- 084:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429392838f438293929392838f4f4f438293929392838f4f4f438293929392838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 085:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f42939f439f4f4f4f42939f4f4f439f4f4f4f42939f4f4f439f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 086:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 087:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429392838f4f4f4f4f4f429392838f4f4f4f4f4f429392838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 088:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f42939f4f42838f4f4f4f42939f4f42838f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 089:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 090:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 091:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 092:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 093:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 094:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 095:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 096:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 097:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 098:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 099:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 100:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 101:f4f4f4f4f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 102:31415161f5f5f5f5f52838f5f5f5f528382838282838f5f5f5f431415161f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4283838f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4283828382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 103:c24a5af2f4f5f5f5f52939f5f5f4f529392939292939f5f5f5f5c24a5af2f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4293939f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4293929392939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 104:c34b5bf3f538f539f5f5f5f5f5f538f539f5f5f5f5f5f5f5f5f5c34b5bf3f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 105:f4aabaf4f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f4aabaf4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f44151415141514151415141514151415141514151415141515141514151415151f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 106:f5f5f5f5f5f5314151515151515151515151515151515161f5f5f5f5f5f5f5f5f5f5f5f5f5f4f4f4f48090a0b08090a0b0869686968090869686968696948686948694862b3b9494860a1a8494868494a4b48696869686968696869690a0b08090a0b08090a0b0f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f5f5f5f5f5f5f5
+-- 107:f5f5f5f5f5f532f5f5f5f5f5f5f5f5f5f5f5f5f5f5a4b462f5f5f5f5f5f5f5f5f5f5f5f5f5f4f4f4f40b1b0b1b0b1b0b1b879787970b1b8797879786964a5a0b1b4c5c862c3c964c5c0b1b8595868595a5b5879787978797879787971b86960b1b0b1b0b1b0b1bf4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f5f5f5f5f5f5f5
+-- 108:f5f5f5f5f5f533f5f5f5f5f5f5f5f5f5f5f5f5f5f5a5b562f4f5f5f5f5f5f5f5f5f5f5f5f5f4f4f4f40c1c0c1c0c1c0c1c0c1c869686968696869686964b5b0c1c4d5d862d3d964d5d0c1c8696868696e0f086869686960c1c8686961c87970c1c0c1c0c1c0c1cf4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f5f5f5f5f5f5
+-- 109:f5f5f5f5f5f532f4f5f5f5f5f5f5f5f5f5f5f5f5f5f5f562f538f539f5f5f5f5f5f5f5f5f5f4f4f4f40d1d0d1d0d1d0d1d0d1d879787978797879787974e5e0d1d4e5e872e3e974e5e0d1d8797878797e1f187879787970d1d8787971d86960d1d0d1d0d1d0d1df4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f538f539f5f5f5
+-- 110:f5f5f5f5f5f532f538f539f5f5f5f5f5f5f5f5f52838f562f5f5f5f5f5f5f5f5f5f5f5f5f5f4f4f4f40e1e0e1e0e1e0e1e0e1e0e1e68786878687868784f5f0e1e4f5f682f3f884f5f0e1e68786868786676687868781e0e1e6878687887970e1e0e1e0e1e0e1ef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f5f5f5f5f5f5f5
+-- 111:f5f5f5f5f5f532f5f5f5f5f5f5f5f5f5f5f5f5f529393862f5f5f5f5f5f5f5f5f5f5f5f5f5f4f4f4f4f4f4f4f4f4f4f4f4f49486f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f429392939f46777f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f5f5f5f5f5f5f5
+-- 112:2838f5f5f5f533f42939f5f5f5f5f5f5f5f5f5f5f5f53962f4f5f5f5f5f5f5f5f5f5f5f5f5f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f46878f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f5f5f5f5f5f5
+-- 113:29392838f5f5322901f401f501f501f501f501f501383862f5f5f5f5f5f5f5f5f5f5f5f5f5f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f42838f4f42838283828382838f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f538f539f5f5f5
+-- 114:28382939283833f4f4f4f5f5f5f529392828293929393963f5f5f5f5f5f5f5f5f5f5f5f5f5f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f42939f4f42939293929392939f4f428382838f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f5f5f5f5f52838
+-- 115:293929392939344454445444544454445444544454445464f4f5f5f5f5f5f5f5f5f5f5f5f5f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429392939f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939
+-- 116:f5f5f5f5f5f50d1d96869686968696869686968696860d1df538f539f5f5f5f5f5f5f5f5f5f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f5f5
+-- 117:2838f5f5f5f50e1e78886878886878886878886868780e1ef5f5f52838f5f5f5f5f5f5f5f5f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f5f5
+-- 118:2939f5f5f5f5f5f5f5f4f5f5f5f5f5f5f5f5f4f5f5f5f5f5f5f5f52939f5f5f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f5
+-- 119:f539f5f5f5f5f5f5f5f538f539f5f5f5f5f5f538f539f5f5f5f5f5f5f5f5f5f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4514151415151415141515141514151514151415151415141515141514151f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f538
+-- 120:f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4849486849484948684948494868494849486849484948684948494868494f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f5f5
+-- 121:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4859586859585958685958595868595859586859585958685958595868595f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 122:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4869686869686968686968696868696869686869686968686968696868696f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 123:f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4879787879787978787978797878797879787879787978787978797878797f4f4f4f4f4f4f428382838283828382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 124:8e6e7e8e6e7e8e6e7e8e6e7e8e6e7e8e6e7e8e6e7e8e6e7e8e6e7e8e6e7e8ef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4989898989898989898989898989898989898989898989898989898989898f4f4f4f4f4f4f429392939293929392939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f46e7e8e8e6e7e8e6e7e8e6e7e8e6e7e8e6e7e8e6e7e8e6e7e8e6e7e8e6e7e
+-- 125:8f6f7f8f6f7f8f6f7f8f6f7f8f6f7f8f6f7f8f6f7f8f6f7f8f6f7f8f6f7f8ff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4989898989898989898989898989898989898989898989898989898989898f428382838f4f428382838f4f4f4f42838f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f46f7f8f8f6f7f8f6f7f8f6f7f8f6f7f8f6f7f8f6f7f8f6f7f8f6f7f8f6f7f
+-- 126:0818f4f4f4f4f40818f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f46e7e8ef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f49898989898989898989898989898989898989898989898989898989898989829392939f4f429392939f4f4f4f42939f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4
+-- 127:0919f40818f4f40919f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f46f7f8ff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4989898989898989898989898989898989898989898989898989898989898f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4
+-- 128:f4f4f409190818f4f4f4f4f4f4f4f4f4f4f4f4f4f40818f40818f4f46e7e8ef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4989898989898989898989898989898989898989898989898989898989898f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebe2838f4f4f4f4f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4
+-- 129:f4f4f4f4f40919f4f4f4f4f4f4f428382838f4f4280919280919f4f46f7f8ff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4687868687868786868786878686878687868687868786868786878686878f4f4f4f4f428382838f4f4f4f4f4f4f4f4f4f42838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbf2939f4f4f4f4f4f4f4f4f4f4f4f42838f4f4f4f42838283828382838
+-- 130:f4f4f4f4f4f4f4f4f4f4f4f4f4f429392939f4f42939f42939f4f4f46e7e8ef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429392939f4f4f4f4f4f4f4f4f4f42939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebe2838f4f4f4f4f4f4f4f4f4f4f4f42928382838f42939293929392939
+-- 131:f4f4f4f4f4f4f4f4f4f4283828382838f4f4f4f4f4081828380818f46f7f8ff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f428382838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbf2939f4f4f4f4f4f4f4f4f4f4f4f42829392939f4f4f428382838f4f4
+-- 132:f4f4f4f4f4f4f4f4f4f4293929392939f4f4f4f4f4091929390919f46f7f8ff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f429392939f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4283838f4f4f4f4f4f4f4f4f42939f4f4f428382838392939f4f4
+-- 133:f4384858f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f46f7f8ff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f43838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4293939f4f4f4f4f4f4f4f4f4f4f4f4f4f429392939f4f4f4f4f4
+-- 134:968696868696f4f4f4f4f4f4f48090b0f4f4f4f4f4f4f4f4f4f4f4f46e7e8ef4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4383838f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4aebef4f4f4f4f4f4f42838f4f4f4f428382838f4f4f4f42838f4f4869686
+-- 135:978797878797f4f4f4f4f4f4f4b214b1f4f4f4f4f4f4f4f4f4f4f4f46f7f8ff4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f431415161804151415151b0f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4afbff4f4f4f4f4f4f42939f4f4f4f429392939f4f4f4f42939f4f4879787
+-- </MAP>
+
+-- <WAVES>
+-- 000:00000000ffffffff00000000ffffffff
+-- 001:0123456789abcdeffedcba9876543210
+-- 002:0123456789abcdef0123456789abcdef
+-- 003:112233354555566667778889ddeeeeee
+-- 005:01230567643210230450304056677530
+-- 006:7227d77833a360c3ccb9b87655449332
+-- 007:2112d300456788992a0ccdef022da720
+-- 011:cdeefffffffeedda8555ee444433c000
+-- </WAVES>
+
+-- <SFX>
+-- 000:5181f191b1c1f102c101c172b101b152911271427142711271418111b14eb10eb16fb14ef12ef160f11df12df11df10df100f100f100f100f100f100235000000000
+-- 003:0570457055705570657065a075b075a08590858095609550a540b540f540b500f500d500e500e500e500f500f500f500f500d500d500f500f500f500000000000000
+-- 005:e140f14d817b91b0b1a0e191f1b1f192f132f103f104f104f105f105f105f103f101f100f10ff10ef10ff100f101f100f100f100f100f100f100f100001000000000
+-- 007:b100d1b4a196718631771167115701560166017b117b318b419b519a817aa14ab13ac13ac14ad16ad17ae16af13cf13df12df11ef11ee11f5110f100000000000000
+-- </SFX>
+
+-- <TRACKS>
+-- 000:100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+-- </TRACKS>
+
+-- <FLAGS>
+-- 000:40401010101010101010101010100010404010101010101010101010101010101010101010101010101010101010001010101010101010001010101000101010100000100010101010101010001000001010101010101010101010100010000000000000000000001000000010100000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000101000000000000000000000000000001000101010100000000000000000000010101000100000000000000000000000000010101010000000000000000000001010001010101010101010100000000000000000000010101010101000000000
+-- 001:00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080808080808080800000000000000000808080808080808000000000000000008080808080808080808000000000000080808080808080808080000000000004040000000000000000000000000000040400000000000000000000000000000000000000202000002000002020000000000000002020000020000020200000080808080808080800000000202000000808080808080808000000000000000000202000000020202000000000000000002020000000202020000000000000000
+-- </FLAGS>
+
+-- <PALETTE>
+-- 000:1a1c2cba855d7d3834eaa56dffcd75ff716de64438257179c2cede3b5dc9c2cade73f6e6f4eaf48d9db2566cba50617d
+-- 001:1a1c2cba855d7d3834eaa56dffcd75ff716de64438257179c2cede3b5dc9c2cade73f6e6f4eaf48d9db2566cba50617d
+-- </PALETTE>
+
